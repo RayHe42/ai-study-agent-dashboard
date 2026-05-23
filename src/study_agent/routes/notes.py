@@ -1,39 +1,50 @@
-from datetime import datetime, timezone
+from fastapi import APIRouter, Depends, HTTPException
 
-from fastapi import APIRouter, HTTPException
-
-from study_agent.schemas import NoteCreate, NoteResponse
+from study_agent import repository
+from study_agent.database import get_connection
+from study_agent.schemas import NoteCreate, NoteResponse, NoteUpdate
 
 router = APIRouter()
 
-_notes_db: list[dict] = []
-_next_id: int = 1
+
+def get_db():
+    from study_agent.config import DATABASE_PATH
+
+    conn = get_connection(DATABASE_PATH)
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 
 @router.get("/", response_model=list[NoteResponse])
-async def list_notes():
-    return _notes_db
+async def list_notes(db=Depends(get_db)):
+    return repository.select_all_notes(db)
 
 
 @router.post("/", response_model=NoteResponse, status_code=201)
-async def create_note(note: NoteCreate):
-    global _next_id
-    new_note = {
-        "id": _next_id,
-        "title": note.title,
-        "content": note.content,
-        "summary": None,
-        "tasks": None,
-        "created_at": datetime.now(timezone.utc),
-    }
-    _notes_db.append(new_note)
-    _next_id += 1
-    return new_note
+async def create_note(note: NoteCreate, db=Depends(get_db)):
+    return repository.insert_note(db, note.title, note.content)
 
 
 @router.get("/{note_id}", response_model=NoteResponse)
-async def get_note(note_id: int):
-    for note in _notes_db:
-        if note["id"] == note_id:
-            return note
-    raise HTTPException(status_code=404, detail="Note not found")
+async def get_note(note_id: int, db=Depends(get_db)):
+    result = repository.select_note_by_id(db, note_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Note not found")
+    return result
+
+
+@router.put("/{note_id}", response_model=NoteResponse)
+async def update_note(note_id: int, note: NoteUpdate, db=Depends(get_db)):
+    result = repository.update_note(db, note_id, note.title, note.content)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Note not found")
+    return result
+
+
+@router.delete("/{note_id}", status_code=204)
+async def delete_note(note_id: int, db=Depends(get_db)):
+    deleted = repository.delete_note(db, note_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Note not found")

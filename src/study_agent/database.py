@@ -1,27 +1,29 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
+import sqlite3
 
-from study_agent.config import DATABASE_URL
-
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(bind=engine)
-
-
-class Base(DeclarativeBase):
-    pass
-
-
-def init_db():
-    """Create all tables defined by ORM models that inherit from Base."""
-    import study_agent.models  # noqa: F401 — ensure models are registered
-
-    Base.metadata.create_all(bind=engine)
+CREATE_NOTES_TABLE = """
+CREATE TABLE IF NOT EXISTS notes (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    title      TEXT NOT NULL,
+    content    TEXT NOT NULL,
+    summary    TEXT,
+    tasks      TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+"""
 
 
-def get_db():
-    """FastAPI dependency that yields a DB session and closes it after use."""
-    db = SessionLocal()
+def get_connection(db_path: str) -> sqlite3.Connection:
+    conn = sqlite3.connect(db_path, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    return conn
+
+
+def init_db(db_path: str) -> None:
+    conn = get_connection(db_path)
     try:
-        yield db
+        conn.execute(CREATE_NOTES_TABLE)
+        conn.commit()
     finally:
-        db.close()
+        conn.close()

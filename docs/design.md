@@ -6,13 +6,17 @@ A local single-user web app for studying. Users write notes, then ask AI to summ
 
 ## Data Model
 
-**Note**
-- id: integer, primary key
-- title: string
-- content: text
-- summary: text (nullable, filled by AI)
-- tasks: text (nullable, filled by AI)
-- created_at: datetime
+**notes table (SQLite)**
+
+| Column | Type | Constraint |
+|--------|------|------------|
+| id | INTEGER | PRIMARY KEY AUTOINCREMENT |
+| title | TEXT | NOT NULL |
+| content | TEXT | NOT NULL |
+| summary | TEXT | nullable (filled by AI later) |
+| tasks | TEXT | nullable (filled by AI later) |
+| created_at | TEXT | NOT NULL, ISO 8601 timestamp |
+| updated_at | TEXT | NOT NULL, ISO 8601 timestamp |
 
 ## API Routes
 
@@ -20,17 +24,21 @@ A local single-user web app for studying. Users write notes, then ask AI to summ
 |--------|------|-------------|
 | GET | /health | Health check, returns `{"status": "ok"}` |
 | GET | / | Home page with note list |
-| GET | /api/notes/ | List all notes (JSON) |
-| POST | /api/notes/ | Create a note (JSON body: title, content) |
-| GET | /api/notes/{id} | Get a single note by ID |
-| POST | /api/notes/{id}/summarize | Generate summary |
-| POST | /api/notes/{id}/tasks | Generate tasks |
+| GET | /api/notes/ | List all notes |
+| POST | /api/notes/ | Create a note (body: title, content) |
+| GET | /api/notes/{id} | Get a single note |
+| PUT | /api/notes/{id} | Update a note (body: title, content) |
+| DELETE | /api/notes/{id} | Delete a note |
 
 ## Storage
 
-**Current stage (Lesson 29):** In-memory Python list. Notes are lost when the server restarts.
+SQLite via Python standard library `sqlite3`. Single file `study_agent.db` created at startup.
 
-**Future:** SQLite via SQLAlchemy. Single file `study.db` created at startup.
+**Architecture:**
+- `config.py` — `DATABASE_PATH` (configurable via `STUDY_AGENT_DATABASE_PATH` env var)
+- `database.py` — `get_connection()` and `init_db()` (creates the notes table)
+- `repository.py` — SQL queries: `insert_note`, `select_all_notes`, `select_note_by_id`, `update_note`, `delete_note`
+- `routes/notes.py` — HTTP layer, uses FastAPI `Depends` to inject DB connection
 
 ## AI Design
 
