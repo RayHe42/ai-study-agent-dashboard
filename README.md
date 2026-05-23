@@ -18,14 +18,32 @@ Open http://127.0.0.1:8000 in your browser.
 pytest tests/ -v
 ```
 
+## Try the API
+
+```bash
+# Health check
+curl http://127.0.0.1:8000/health
+
+# List notes (empty at first)
+curl http://127.0.0.1:8000/api/notes/
+
+# Create a note
+curl -X POST http://127.0.0.1:8000/api/notes/ \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Python Basics", "content": "Variables, loops, functions"}'
+
+# Get a note by ID
+curl http://127.0.0.1:8000/api/notes/1
+```
+
 ## Project Structure
 
 ```
 src/study_agent/
   main.py          — FastAPI app entry point
   config.py        — app settings
-  database.py      — SQLite init and helpers
-  models.py        — SQLAlchemy ORM models
+  database.py      — SQLite init and helpers (not used yet)
+  models.py        — SQLAlchemy ORM models (not used yet)
   schemas.py       — Pydantic request/response schemas
   prompts.py       — prompt builders for AI tasks
   ai_client.py     — AI client (mock mode)
@@ -36,8 +54,9 @@ src/study_agent/
 tests/
   test_prompts.py  — prompt builder tests
   test_database.py — database init tests
+  test_routes.py   — API route tests
 ```
 
 ## Current Status
 
-Lesson 29: project skeleton only. AI features use mock responses.
+Lesson 29: basic routes with in-memory storage. AI features use mock responses. SQLite will be added in a later lesson.

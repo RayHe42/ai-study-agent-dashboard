@@ -18,20 +18,23 @@ A local single-user web app for studying. Users write notes, then ask AI to summ
 
 | Method | Path | Description |
 |--------|------|-------------|
+| GET | /health | Health check, returns `{"status": "ok"}` |
 | GET | / | Home page with note list |
-| GET | /notes/new | New note form |
-| POST | /notes | Create a note |
-| GET | /notes/{id} | Note detail page |
-| POST | /notes/{id}/summarize | Generate summary |
-| POST | /notes/{id}/tasks | Generate tasks |
+| GET | /api/notes/ | List all notes (JSON) |
+| POST | /api/notes/ | Create a note (JSON body: title, content) |
+| GET | /api/notes/{id} | Get a single note by ID |
+| POST | /api/notes/{id}/summarize | Generate summary |
+| POST | /api/notes/{id}/tasks | Generate tasks |
+
+## Storage
+
+**Current stage (Lesson 29):** In-memory Python list. Notes are lost when the server restarts.
+
+**Future:** SQLite via SQLAlchemy. Single file `study.db` created at startup.
 
 ## AI Design
 
 All AI calls go through `ai_client.py`. Current mode: mock (returns fixed text). Future: swap in a real API client without changing route code.
-
-## Storage
-
-SQLite via SQLAlchemy. Single file `study.db` created at startup.
 
 ## Scope Exclusions
 

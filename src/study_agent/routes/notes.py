@@ -1,28 +1,39 @@
-from fastapi import APIRouter
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, HTTPException
+
+from study_agent.schemas import NoteCreate, NoteResponse
 
 router = APIRouter()
 
+_notes_db: list[dict] = []
+_next_id: int = 1
 
-@router.get("/")
+
+@router.get("/", response_model=list[NoteResponse])
 async def list_notes():
-    return {"notes": []}
+    return _notes_db
 
 
-@router.post("/")
-async def create_note():
-    return {"message": "not implemented"}
+@router.post("/", response_model=NoteResponse, status_code=201)
+async def create_note(note: NoteCreate):
+    global _next_id
+    new_note = {
+        "id": _next_id,
+        "title": note.title,
+        "content": note.content,
+        "summary": None,
+        "tasks": None,
+        "created_at": datetime.now(timezone.utc),
+    }
+    _notes_db.append(new_note)
+    _next_id += 1
+    return new_note
 
 
-@router.get("/{note_id}")
+@router.get("/{note_id}", response_model=NoteResponse)
 async def get_note(note_id: int):
-    return {"note_id": note_id}
-
-
-@router.post("/{note_id}/summarize")
-async def summarize_note(note_id: int):
-    return {"note_id": note_id, "summary": "[mock]"}
-
-
-@router.post("/{note_id}/tasks")
-async def generate_tasks(note_id: int):
-    return {"note_id": note_id, "tasks": ["[mock task]"]}
+    for note in _notes_db:
+        if note["id"] == note_id:
+            return note
+    raise HTTPException(status_code=404, detail="Note not found")

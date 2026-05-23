@@ -8,12 +8,12 @@ class NoteCreate(BaseModel):
     content: str
 
 
-class NoteRead(BaseModel):
+class NoteResponse(BaseModel):
     id: int
     title: str
     content: str
-    summary: str | None
-    tasks: str | None
+    summary: str | None = None
+    tasks: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
